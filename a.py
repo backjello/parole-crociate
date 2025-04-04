@@ -41,3 +41,6 @@ if 'choices' in response_json and len(response_json['choices']) > 0:
     print(response_json['choices'][0]['message']['content'])
 else:
     print("Response:", response_json)
+    
+    
+    
