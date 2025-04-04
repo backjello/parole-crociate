@@ -5,12 +5,11 @@ export class Game {
     public theme: string = ''
     public word: string = ''
     public n: number = 0
-    public words: any
-    // {
-    //     word: string,
-    //     definition: string
-    //     index: number // where to start the word
-    // }[] = []
+    public words: {
+        word: string,
+        definition: string
+        index: number // where to start the word
+    }[] = []
     propmt: string = ''
     axiosInstance: AxiosInstance
 
@@ -26,7 +25,7 @@ export class Game {
 
     async init() {
 
-        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta, sii creativo`, 2))
+        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta, sii creativo`, 1.75))
         const temp: Response = res.data
         this.word = temp.choices[0].message?.content
         this.n = this.word.length
@@ -48,6 +47,11 @@ export class Game {
         this.words = JSON.parse(temp.choices[0].message.content.replaceAll('\n', ''))
         if (this.words.length != this.word.length) {
             await this.getWords()
+        }
+        for (let i = 0; i < this.words.length; i++) {
+            const word = this.words[i]
+            const letter = this.word.charAt(i)
+            word.index = this.word.indexOf(letter)
         }
     }
 

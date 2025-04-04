@@ -11,14 +11,18 @@ import { HttpContext } from '@adonisjs/core/http'
 import router from '@adonisjs/core/services/router'
 import { Game } from '../app/classes/game.js'
 
-router.get('/game/:theme', async ({ params }: HttpContext) => {
+router.get('/game/:theme', async ({ params, response }: HttpContext) => {
 
-  const theme = params.theme
+  const theme = decodeURI(params.theme)
 
   const game = new Game(theme)
+  //try {
   await game.init()
-
-
   return game
+  // } catch (error) {
+  //   return response.status(400).json({ error })
+  // }
+
+
 
 })
