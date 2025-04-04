@@ -3,9 +3,11 @@ import axios, { AxiosInstance } from "axios"
 
 export class Game {
     public theme: string = ''
-    public word: string = ''
-    public n: number = 0
-    public words: {
+    public word: string = '' // parola generata da AI
+    get n(): number {
+        return this.word.length
+    }
+    public words: { // parole e definizioni
         word: string,
         definition: string
         index: number // where to start the word
@@ -25,14 +27,13 @@ export class Game {
 
     async init() {
 
-        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta, sii creativo`, 1.75))
+        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta, sii creativo`, 1.5))
         const temp: Response = res.data
-        this.word = temp.choices[0].message?.content
-        this.n = this.word.length
-        this.propmt = `generami ${this.word.length} parole a tema ${this.theme} \n`
+        this.word = temp.choices[0].message?.content.toLowerCase()
+        this.propmt = ''// `generami ${this.word.length} parole a tema ${this.theme} \n`
 
         for (let i = 0; i < this.word.length; i++) {
-            this.propmt += 'generami una parola che contenga la lettera "' + this.word.charAt(i) + '" e la sua definizione \n';
+            this.propmt += `generami una parola a tema ${this.theme} che contenga la lettera "${this.word.charAt(i)}" e la sua definizione \n`;
         }
 
         this.propmt += '\n le lettere che richiedo non devono essere sempre nella stessa posizione\n';
@@ -47,15 +48,23 @@ export class Game {
         this.words = JSON.parse(temp.choices[0].message.content.replaceAll('\n', ''))
         if (this.words.length != this.word.length) {
             await this.getWords()
+            return
         }
-        for (let i = 0; i < this.words.length; i++) {
-            const word = this.words[i]
+        for (let i = 0; i < this.n; i++) {
+            const curWord = this.words[i]
+            curWord.word = curWord.word.toLowerCase()
             const letter = this.word.charAt(i)
-            word.index = this.word.indexOf(letter)
+            console.log(curWord.word, letter);
+
+            curWord.index = curWord.word.indexOf(letter)
+            if (curWord.index == -1) {
+                await this.getWords()
+                return
+            }
         }
     }
 
-    private makePayload(text: string, teperature: number = 1) {
+    private makePayload(text: string, teperature: number = 0) {
         return {
             "model": "openrouter/quasar-alpha",
             "messages": [
