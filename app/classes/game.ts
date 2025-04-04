@@ -16,7 +16,6 @@ export class Game {
 
     constructor(theme: string) {
         this.theme = theme
-        console.log('pikachu');
         this.axiosInstance = axios.create({
             headers: {
                 Authorization: 'Bearer ' + env.get('OPENROUTER_KEY'),
@@ -27,7 +26,7 @@ export class Game {
 
     async init() {
 
-        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta`))
+        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta, sii creativo`, 2))
         const temp: Response = res.data
         this.word = temp.choices[0].message?.content
         this.n = this.word.length
@@ -47,9 +46,12 @@ export class Game {
         const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(this.propmt))
         const temp: Response = res.data
         this.words = JSON.parse(temp.choices[0].message.content.replaceAll('\n', ''))
+        if (this.words.length != this.word.length) {
+            await this.getWords()
+        }
     }
 
-    private makePayload(text: string) {
+    private makePayload(text: string, teperature: number = 1) {
         return {
             "model": "openrouter/quasar-alpha",
             "messages": [
@@ -62,7 +64,8 @@ export class Game {
                         }
                     ]
                 }
-            ]
+            ],
+            "temperature": teperature
         }
     }
 
