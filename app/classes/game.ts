@@ -1,4 +1,5 @@
-import axios from "axios"
+import env from "#start/env"
+import axios, { AxiosInstance } from "axios"
 
 export class Game {
     public theme: string = ''
@@ -11,36 +12,25 @@ export class Game {
     //     index: number // where to start the word
     // }[] = []
     propmt: string = ''
+    axiosInstance: AxiosInstance
 
     constructor(theme: string) {
         this.theme = theme
         console.log('pikachu');
-
+        this.axiosInstance = axios.create({
+            headers: {
+                Authorization: 'Bearer ' + env.get('OPENROUTER_KEY'),
+                "Content-Type": "application/json",
+            },
+        })
     }
 
     async init() {
 
-        const res = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-            "model": "openrouter/quasar-alpha",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": `dammi una parola a tema ${this.theme}. dammi solo la parola in risposta`
-                        }
-                    ]
-                }
-            ]
-        }, {
-            headers: {
-                Authorization: 'Bearer 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'
-            }
-        })
+        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(`dammi una parola a tema ${this.theme}. dammi solo la parola in risposta`))
         const temp: Response = res.data
         this.word = temp.choices[0].message?.content
-
+        this.n = this.word.length
         this.propmt = `generami ${this.word.length} parole a tema ${this.theme} \n`
 
         for (let i = 0; i < this.word.length; i++) {
@@ -54,7 +44,13 @@ export class Game {
 
     }
     async getWords() {
-        const res = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+        const res = await this.axiosInstance.post("https://openrouter.ai/api/v1/chat/completions", this.makePayload(this.propmt))
+        const temp: Response = res.data
+        this.words = JSON.parse(temp.choices[0].message.content.replaceAll('\n', ''))
+    }
+
+    private makePayload(text: string) {
+        return {
             "model": "openrouter/quasar-alpha",
             "messages": [
                 {
@@ -62,18 +58,12 @@ export class Game {
                     "content": [
                         {
                             "type": "text",
-                            "text": this.propmt
+                            "text": text
                         }
                     ]
                 }
             ]
-        }, {
-            headers: {
-                Authorization: 'Bearer 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'
-            }
-        })
-        const temp: Response = res.data
-        this.words = JSON.parse(temp.choices[0].message.content.replaceAll('\n', ''))
+        }
     }
 
 }
